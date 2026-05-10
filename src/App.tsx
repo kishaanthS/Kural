@@ -203,7 +203,7 @@ export default function App() {
 
                 <div className="mt-12 pt-12 border-t border-dim flex flex-wrap gap-4">
                   <a 
-                    href={selectedArticle.url.startsWith('http') ? selectedArticle.url : `https://${selectedArticle.url}`} 
+                    href={selectedArticle.url} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="px-8 py-4 bg-accent text-white text-[10px] uppercase tracking-[3px] font-black hover:scale-105 transition-all shadow-xl shadow-accent/20 active:scale-95 flex items-center"
