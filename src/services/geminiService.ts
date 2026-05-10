@@ -149,14 +149,19 @@ export async function searchNews(query: string): Promise<NewsArticle[]> {
 }
 
 export async function expandArticleContent(article: NewsArticle): Promise<string> {
-  const prompt = `You are a professional reporter. Based on the following news summary, please provide a detailed, long-form report (at least 400-500 words). 
-  Use the Google Search tool to find more context and facts if needed to make the report comprehensive.
+  const prompt = `Act as an investigative reporter. Your mission is to provide the FULL intelligence report for the story titled: "${article.title}".
   
-  Title: ${article.title}
-  Summary: ${article.summary}
-  Source: ${article.source}
+  SUMMARY PROVIDED: ${article.summary}
+  ORIGINAL SOURCE: ${article.source}
   
-  Format the output as clear paragraphs. Do not return JSON, just the plain text of the report.`;
+  DIRECTIONS:
+  1. Use the Google Search tool to find the LATEST and most DETAILED information specifically about this event.
+  2. Synthesize a comprehensive, long-form news report (600-800 words).
+  3. Include key details: Who, What, Where, When, Why, and the broader context/implications.
+  4. Use a formal, objective, and authoritative journalistic tone.
+  5. Ensure the content feels like reading a full featured article from a premium news outlet.
+  
+  Format the output as clean, distinct paragraphs. Provide only the article text.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -167,9 +172,9 @@ export async function expandArticleContent(article: NewsArticle): Promise<string
       }
     });
 
-    return response.text || "Report generation failed.";
+    return response.text || "Intelligence synthesis failed. Please try again.";
   } catch (error) {
     console.error("Error expanding article:", error);
-    return "Failed to fetch full story intelligence.";
+    return "Failed to fetch full story intelligence due to a secure connection error.";
   }
 }
