@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">KURAL</string>
+    <string name="title_activity_main">KURAL</string>
+    <string name="package_name">com.kural.news</string>
+    <string name="custom_url_scheme">com.kural.news</string>
+</resources>

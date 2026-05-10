@@ -11,7 +11,26 @@ export interface NewsArticle {
   url: string;
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const ai = new GoogleGenAI({ 
+  apiKey: process.env.GEMINI_API_KEY || "",
+  allowInsecureBrowserUsage: true
+});
+
+// Simple in-memory cache to store results for 5 minutes
+const cache = new Map<string, { data: NewsArticle[], timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+const getCachedData = (key: string) => {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+  return null;
+};
+
+const setCachedData = (key: string, data: NewsArticle[]) => {
+  cache.set(key, { data, timestamp: Date.now() });
+};
 
 const sanitizeUrl = (url: any): string => {
   if (!url || typeof url !== 'string') return '';
@@ -37,37 +56,34 @@ const sanitizeUrl = (url: any): string => {
 };
 
 export async function fetchNewsByCategory(category: string): Promise<NewsArticle[]> {
+  const cached = getCachedData(category);
+  if (cached) return cached;
+
   const categoriesMap: Record<string, string> = {
-    'Tamil Nadu': 'Tamil Nadu breaking news Chennai Coimbatore Madurai',
-    'India': 'India national news breaking today New Delhi',
-    'World': 'International world news breaking current events'
+    'Tamil Nadu': 'top news Tamil Nadu Chennai breaking TODAY',
+    'India': 'India national breaking news headlines TODAY',
+    'World': 'top international world news breaking TODAY'
   };
 
   const searchQuery = categoriesMap[category] || category;
   
-  const prompt = `Act as a senior investigative news curator for 'KURAL'. 
-  Use the Google Search tool to find 15-20 CURRENT news articles published in the last 24-48 hours for: ${searchQuery}.
+  const prompt = `Find 12-15 REAL news articles published in the last 24h for: ${searchQuery}.
+  Return ONLY a JSON array: [{"title":string, "summary":string, "source":string, "publishedAt":string, "url":string, "imageUrl":string}]
   
-  Return ONLY a JSON array of objects with: title, summary, source, publishedAt, url, imageUrl.
+  RULES:
+  - COMPLETE canoncial URLs only.
+  - NO ellipses in URLs.
+  - Trusted sources only (The Hindu, NDTV, Reuters).
   
-  CRITICAL URL INTEGRITY RULE:
-  - YOU MUST provide the EXACT and COMPLETE canonical URL found in search results.
-  - NEVER truncate a URL with ellipses (...).
-  - NEVER hallucinate a URL based on the headline.
-  - If you cannot find a direct link to the full article, skip that article.
-  
-  Preferred Sources: The Hindu, NDTV, Reuters, BBC, The Indian Express.
-  
-  Query: ${searchQuery}
-  Current Date: ${new Date().toLocaleDateString()}`;
+  Query: ${searchQuery}`;
 
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
+      tools: [{ googleSearch: {} }],
       config: {
         responseMimeType: "application/json",
-        tools: [{ googleSearch: {} }]
       }
     });
 
@@ -76,12 +92,15 @@ export async function fetchNewsByCategory(category: string): Promise<NewsArticle
     
     if (!Array.isArray(articles)) return [];
 
-    return articles.map((a: any, index: number) => ({
+    const results = articles.map((a: any, index: number) => ({
       ...a,
       url: sanitizeUrl(a.url),
       id: `${category.replace(/\s+/g, '')}-${index}-${Date.now()}`,
       category
     })).filter((a: any) => a.url !== '' && a.title && a.title.length > 10);
+
+    if (results.length > 0) setCachedData(category, results);
+    return results;
   } catch (error) {
     console.error("Error fetching news:", error);
     return [];
@@ -89,33 +108,37 @@ export async function fetchNewsByCategory(category: string): Promise<NewsArticle
 }
 
 export async function searchNews(query: string): Promise<NewsArticle[]> {
-  const prompt = `Act as an investigative journalist for 'KURAL'. 
-  Perform a deep Google Search to find current news for: '${query}'.
-  
-  Return a JSON array of 15-20 news stories.
-  Format: [{"title": "...", "summary": "...", "source": "...", "publishedAt": "...", "url": "...", "imageUrl": "..."}]
-  
-  URGENT: Ensure every URL is the REAL CANONICAL LINK. No truncated links.`;
+  const cached = getCachedData(`search-${query}`);
+  if (cached) return cached;
+
+  const prompt = `Search for: '${query}'. 12-15 recent news stories. 
+  JSON array: [{"title":string, "summary":string, "source":string, "publishedAt":string, "url":string, "imageUrl":string}]
+  URLs must be FULL and REAL.`;
 
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
+      tools: [{ googleSearch: {} }],
       config: {
         responseMimeType: "application/json",
-        tools: [{ googleSearch: {} }]
       }
     });
 
     const text = response.text || "[]";
     const articles = JSON.parse(text);
     
-    return articles.map((a: any, index: number) => ({
+    if (!Array.isArray(articles)) return [];
+
+    const results = articles.map((a: any, index: number) => ({
       ...a,
       url: sanitizeUrl(a.url),
       id: `search-${index}-${Date.now()}`,
       category: 'Search Result'
     })).filter((a: any) => a.url !== '' && a.title);
+
+    if (results.length > 0) setCachedData(`search-${query}`, results);
+    return results;
   } catch (error) {
     console.error("Error searching news:", error);
     return [];

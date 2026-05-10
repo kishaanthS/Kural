@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <!-- Newspaper Outline -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="40"
+        android:strokeLineJoin="round"
+        android:pathData="M170,256 L854,256 L854,768 L170,768 Z" />
+    <!-- Text Lines -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="30"
+        android:strokeLineCap="round"
+        android:pathData="M341,426 L682,426" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="30"
+        android:strokeLineCap="round"
+        android:pathData="M341,597 L511,597" />
+    <!-- Image Box -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M640,554 h85 v85 h-85 z" />
+</vector>

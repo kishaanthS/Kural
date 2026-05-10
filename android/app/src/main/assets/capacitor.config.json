@@ -1,0 +1,8 @@
+{
+	"appId": "com.kural.news",
+	"appName": "KURAL",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	}
+}
