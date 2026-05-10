@@ -5,6 +5,8 @@
   --font-serif: "Georgia", serif;
   
   --color-accent: #D90429;
+
+  --animate-spin-slow: spin 3s linear infinite;
 }
 
 @layer base {

@@ -4,6 +4,7 @@ export interface NewsArticle {
   id: string;
   title: string;
   summary: string;
+  fullContent?: string;
   source: string;
   publishedAt: string;
   category: string;
@@ -12,8 +13,7 @@ export interface NewsArticle {
 }
 
 const ai = new GoogleGenAI({ 
-  apiKey: process.env.GEMINI_API_KEY || "",
-  allowInsecureBrowserUsage: true
+  apiKey: process.env.GEMINI_API_KEY || ""
 });
 
 // Simple in-memory cache to store results for 5 minutes
@@ -79,16 +79,18 @@ export async function fetchNewsByCategory(category: string): Promise<NewsArticle
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
-      tools: [{ googleSearch: {} }],
       config: {
-        responseMimeType: "application/json",
+        tools: [{ googleSearch: {} }],
       }
     });
 
     const text = response.text || "[]";
-    let articles = JSON.parse(text);
+    // Basic cleanup in case the model wraps JSON in markdown blocks
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    const cleanText = jsonMatch ? jsonMatch[0] : text;
+    let articles = JSON.parse(cleanText);
     
     if (!Array.isArray(articles)) return [];
 
@@ -117,16 +119,17 @@ export async function searchNews(query: string): Promise<NewsArticle[]> {
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
-      tools: [{ googleSearch: {} }],
       config: {
-        responseMimeType: "application/json",
+        tools: [{ googleSearch: {} }],
       }
     });
 
     const text = response.text || "[]";
-    const articles = JSON.parse(text);
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    const cleanText = jsonMatch ? jsonMatch[0] : text;
+    const articles = JSON.parse(cleanText);
     
     if (!Array.isArray(articles)) return [];
 
@@ -142,5 +145,31 @@ export async function searchNews(query: string): Promise<NewsArticle[]> {
   } catch (error) {
     console.error("Error searching news:", error);
     return [];
+  }
+}
+
+export async function expandArticleContent(article: NewsArticle): Promise<string> {
+  const prompt = `You are a professional reporter. Based on the following news summary, please provide a detailed, long-form report (at least 400-500 words). 
+  Use the Google Search tool to find more context and facts if needed to make the report comprehensive.
+  
+  Title: ${article.title}
+  Summary: ${article.summary}
+  Source: ${article.source}
+  
+  Format the output as clear paragraphs. Do not return JSON, just the plain text of the report.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+      }
+    });
+
+    return response.text || "Report generation failed.";
+  } catch (error) {
+    console.error("Error expanding article:", error);
+    return "Failed to fetch full story intelligence.";
   }
 }

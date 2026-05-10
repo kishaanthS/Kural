@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ExternalLink, Clock, Share2 } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { NewsArticle } from '../types';
 import { ArticleImage } from './ArticleImage';
 
@@ -36,44 +36,16 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, onExpand }) => {
           {article.summary}
         </p>
         
-        <div className="flex items-center justify-between mt-auto pt-6 border-t border-dim/50">
-          <div className="flex items-center space-x-4">
-            <div className="w-10 h-10 bg-gray-100 dark:bg-white/5 flex items-center justify-center text-[10px] font-black border border-dim uppercase">
-               {article.source.charAt(0)}
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider">{article.source}</p>
-              <div className="flex items-center text-[10px] text-dim mt-1 uppercase tracking-widest">
-                <Clock className="w-3 h-3 mr-1.5 text-accent" />
-                {article.publishedAt}
-              </div>
-            </div>
+        <div className="flex items-center space-x-4 mt-auto pt-6 border-t border-dim/50">
+          <div className="w-10 h-10 bg-gray-100 dark:bg-white/5 flex items-center justify-center text-[10px] font-black border border-dim uppercase">
+             {article.source.charAt(0)}
           </div>
-          
-          <div className="flex space-x-3">
-            <button 
-              className="p-3 bg-gray-50 dark:bg-white/5 border border-dim hover:bg-white dark:hover:bg-white/10 rounded-sm transition-all text-dim hover:text-accent"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (navigator.share) {
-                  navigator.share({
-                    title: article.title,
-                    url: article.url
-                  });
-                }
-              }}
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-            <a 
-              href={article.url} 
-              onClick={(e) => e.stopPropagation()}
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center justify-center p-3 bg-accent text-white rounded-sm hover:scale-105 transition-all shadow-lg shadow-accent/20 active:scale-95"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider">{article.source}</p>
+            <div className="flex items-center text-[10px] text-dim mt-1 uppercase tracking-widest">
+              <Clock className="w-3 h-3 mr-1.5 text-accent" />
+              {article.publishedAt}
+            </div>
           </div>
         </div>
       </div>

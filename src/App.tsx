@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { CategoryNav } from './components/CategoryNav';
 import { NewsCard } from './components/NewsCard';
 import { ArticleImage } from './components/ArticleImage';
-import { fetchNewsByCategory, searchNews } from './services/geminiService';
+import { fetchNewsByCategory, searchNews, expandArticleContent } from './services/geminiService';
 import { Category, NewsArticle } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, RefreshCw, Newspaper, Search, X, ArrowLeft } from 'lucide-react';
+import { Loader2, RefreshCw, Newspaper, Search, X, ArrowLeft, BrainCircuit } from 'lucide-react';
 
 const CATEGORIES: Category[] = [
   'Tamil Nadu',
@@ -21,7 +21,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  const [isExpanding, setIsExpanding] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   
@@ -83,11 +85,38 @@ export default function App() {
     }
   };
 
+  const handleExpandArticle = async () => {
+    if (!selectedArticle || selectedArticle.fullContent) return;
+    
+    setIsExpanding(true);
+    try {
+      const fullContent = await expandArticleContent(selectedArticle);
+      setSelectedArticle(prev => prev ? { ...prev, fullContent } : null);
+      
+      // Update the article in the list too so it's cached
+      setNews(prev => prev.map(a => a.id === selectedArticle.id ? { ...a, fullContent } : a));
+      if (searchResults.length > 0) {
+        setSearchResults(prev => prev.map(a => a.id === selectedArticle.id ? { ...a, fullContent } : a));
+      }
+    } catch (err) {
+      console.error("Scale-up failed", err);
+    } finally {
+      setIsExpanding(false);
+    }
+  };
+
   useEffect(() => {
     if (!isSearchOpen) {
       loadNews(activeCategory);
     }
   }, [activeCategory, isSearchOpen]);
+
+  // Auto-expand when article is selected if not already expanded
+  useEffect(() => {
+    if (selectedArticle && !selectedArticle.fullContent && !isExpanding) {
+      handleExpandArticle();
+    }
+  }, [selectedArticle?.id]);
 
   return (
     <div className="min-h-screen transition-colors duration-300 pb-24">
@@ -192,39 +221,28 @@ export default function App() {
                 </div>
 
                 <div className="font-serif text-xl md:text-2xl leading-relaxed text-dim space-y-6">
-                  {selectedArticle.summary.split('. ').map((sentence, i) => (
-                    <p key={i}>{sentence.trim()}{sentence.endsWith('.') ? '' : '.'}</p>
-                  ))}
-                  <p className="pt-10 italic text-lg">This story is unfolding. For the full experience and live updates, please visit the original source.</p>
-                </div>
-
-                <div className="mt-12 pt-12 border-t border-dim flex flex-wrap gap-4">
-                  <a 
-                    href={selectedArticle.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="px-8 py-4 bg-accent text-white text-[10px] uppercase tracking-[3px] font-black hover:scale-105 transition-all shadow-xl shadow-accent/20 active:scale-95 flex items-center"
-                  >
-                    Read Full Source
-                    <Newspaper className="w-4 h-4 ml-3" />
-                  </a>
-                  <button 
-                    className="px-8 py-4 bg-gray-100 dark:bg-white/5 text-[10px] uppercase tracking-[3px] font-black border border-dim active:scale-95 flex items-center"
-                    onClick={() => {
-                       if (navigator.share) {
-                         navigator.share({
-                           title: selectedArticle.title,
-                           text: selectedArticle.summary,
-                           url: selectedArticle.url
-                         }).catch(() => {});
-                       } else {
-                         navigator.clipboard.writeText(selectedArticle.url);
-                         alert("Link copied to clipboard");
-                       }
-                    }}
-                  >
-                    Share Intelligence
-                  </button>
+                  {selectedArticle.fullContent ? (
+                    selectedArticle.fullContent.split('\n').filter(p => p.trim()).map((paragraph, i) => (
+                      <p key={i}>{paragraph.trim()}</p>
+                    ))
+                  ) : (
+                    <>
+                      {selectedArticle.summary.split('. ').map((sentence, i) => (
+                        <p key={i}>{sentence.trim()}{sentence.endsWith('.') ? '' : '.'}</p>
+                      ))}
+                      {isExpanding && (
+                        <div className="mt-12 space-y-4 animate-pulse">
+                          <div className="h-4 bg-dim/20 w-full rounded"></div>
+                          <div className="h-4 bg-dim/20 w-[95%] rounded"></div>
+                          <div className="h-4 bg-dim/20 w-[90%] rounded"></div>
+                          <div className="flex items-center space-x-2 text-accent text-sm font-black uppercase tracking-[3px] mt-8">
+                            <BrainCircuit className="w-4 h-4 animate-spin-slow" />
+                            <span>Synthesizing Full Intelligence Report...</span>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>
