@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { CategoryNav } from './components/CategoryNav';
 import { NewsCard } from './components/NewsCard';
+import { ArticleImage } from './components/ArticleImage';
 import { fetchNewsByCategory, searchNews } from './services/geminiService';
 import { Category, NewsArticle } from './types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -173,16 +174,12 @@ export default function App() {
                   {selectedArticle.title}
                 </h1>
                 
-                {selectedArticle.imageUrl && (
-                  <div className="mb-10 rounded-sm overflow-hidden border border-dim">
-                    <img 
-                      src={selectedArticle.imageUrl} 
-                      alt={selectedArticle.title}
-                      className="w-full h-auto object-cover max-h-[500px]"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                )}
+                <ArticleImage 
+                  src={selectedArticle.imageUrl || ''} 
+                  alt={selectedArticle.title}
+                  containerClassName="mb-10 rounded-sm overflow-hidden border border-dim"
+                  className="w-full h-auto object-cover max-h-[500px]"
+                />
 
                 <div className="flex items-center space-x-6 mb-10 pb-10 border-b border-dim text-balance">
                   <div className="w-12 h-12 bg-accent flex items-center justify-center text-sm font-black text-white shrink-0">
@@ -239,9 +236,16 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center py-40"
             >
-              <Loader2 className="w-12 h-12 text-accent animate-spin mb-6" />
-              <p className="text-dim text-[10px] uppercase tracking-[6px] font-bold animate-pulse text-center">
-                {isSearching ? `Investigating "${searchQuery}"...` : 'Curating the dispatch...'}
+              <div className="w-20 h-20 bg-[#080808] border border-white/5 rounded-3xl flex items-center justify-center shadow-2xl mb-8 animate-pulse ring-1 ring-white/5">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 6H20V18H4V6Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M8 10H16" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M8 14H12" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                  <rect x="15" y="13" width="2" height="2" fill="white"/>
+                </svg>
+              </div>
+              <p className="text-dim text-[10px] uppercase tracking-[8px] font-black animate-pulse text-center">
+                {isSearching ? `Investigating "${searchQuery}"...` : 'Synchronizing Dispatch'}
               </p>
             </motion.div>
           ) : error ? (
@@ -310,8 +314,10 @@ export default function App() {
           }}
           className={`flex flex-col items-center transition-all active:scale-90 ${!selectedArticle && !isSearchOpen ? 'text-accent' : 'text-dim hover:text-accent'}`}
         >
-          <Newspaper className="w-6 h-6 mb-1.5" />
-          <span className="text-[8px] font-black uppercase tracking-[3px]">Feed</span>
+          <div className={`p-2 rounded-lg transition-all ${!selectedArticle && !isSearchOpen ? 'bg-accent/10 border border-accent/20' : ''}`}>
+            <Newspaper className="w-6 h-6" />
+          </div>
+          <span className="text-[8px] font-black uppercase tracking-[3px] mt-1.5">Feed</span>
         </button>
         
         <button 
@@ -322,12 +328,15 @@ export default function App() {
           }}
           className={`flex flex-col items-center transition-all active:scale-90 ${isSearchOpen ? 'text-accent' : 'text-dim hover:text-accent'}`}
         >
-          <Search className="w-6 h-6 mb-1.5" />
-          <span className="text-[8px] font-black uppercase tracking-[3px]">Search</span>
+          <div className={`p-2 rounded-lg transition-all ${isSearchOpen ? 'bg-accent/10 border border-accent/20' : ''}`}>
+            <Search className="w-6 h-6" />
+          </div>
+          <span className="text-[8px] font-black uppercase tracking-[3px] mt-1.5">Search</span>
         </button>
 
         <button 
           onClick={() => {
+            setLoading(true);
             setError(null);
             if (isSearchOpen) {
               handleSearch();
@@ -337,8 +346,10 @@ export default function App() {
           }}
           className="flex flex-col items-center text-dim hover:text-accent transition-all active:scale-90"
         >
-          <RefreshCw className="w-6 h-6 mb-1.5" />
-          <span className="text-[8px] font-black uppercase tracking-[3px]">Refresh</span>
+          <div className="p-2">
+            <RefreshCw className="w-6 h-6" />
+          </div>
+          <span className="text-[8px] font-black uppercase tracking-[3px] mt-1.5">Refresh</span>
         </button>
       </nav>
     </div>

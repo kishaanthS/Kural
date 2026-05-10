@@ -4,8 +4,8 @@
   "description": "Tamil Nadu, India and World News Hub",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "background_color": "#080808",
+  "theme_color": "#080808",
   "icons": [
     {
       "src": "https://picsum.photos/seed/tnnews/192/192",

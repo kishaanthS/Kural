@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { ExternalLink, Clock, Share2 } from 'lucide-react';
 import { NewsArticle } from '../types';
+import { ArticleImage } from './ArticleImage';
 
 interface NewsCardProps {
   article: NewsArticle;
@@ -17,29 +18,17 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, onExpand }) => {
       id={`news-card-${article.id}`}
       onClick={() => onExpand(article)}
     >
-      {article.imageUrl && (
-        <div className="relative h-64 overflow-hidden border-b border-dim">
-          <img
-            src={article.imageUrl}
-            alt={article.title}
-            className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="absolute top-4 left-4">
-             <span className="px-2 py-1 bg-accent text-white text-[9px] font-black uppercase tracking-[2px]">
-                {article.category}
-             </span>
-          </div>
-        </div>
-      )}
+      <ArticleImage 
+        src={article.imageUrl || ''} 
+        alt={article.title}
+        containerClassName="relative h-64 overflow-hidden border-b border-dim"
+        className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
+      />
       
       <div className="p-6 md:p-8">
-        {!article.imageUrl && (
-           <span className="inline-block px-2 py-1 bg-accent/10 text-accent text-[9px] font-black uppercase tracking-[2px] mb-4 border border-accent/20">
-              {article.category}
-           </span>
-        )}
+        <span className="inline-block px-2 py-1 bg-accent/10 text-accent text-[9px] font-black uppercase tracking-[2px] mb-4 border border-accent/20">
+          {article.category}
+        </span>
         <h3 className="text-2xl md:text-3xl font-bold leading-tight mb-4 tracking-tight group-hover:text-accent transition-colors duration-300">
           {article.title}
         </h3>
